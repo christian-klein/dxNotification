@@ -1,17 +1,19 @@
 package com.hcl.dxUserProfile.security;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.web.filter.OncePerRequestFilter;
+import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.web.filter.OncePerRequestFilter;
+import java.security.Principal;
 
 public class LtpaTokenFilter extends OncePerRequestFilter {
 
@@ -25,7 +27,7 @@ public class LtpaTokenFilter extends OncePerRequestFilter {
 		if (ltpaToken != null) {
 			try {
 				// Validate LTPA token using WebSphere or any custom validation logic
-				boolean isValidToken = validateLtpaToken(ltpaToken);
+				boolean isValidToken = validateLtpaToken(request);
 
 				if (isValidToken) {
 					User user = new User("authenticatedUser", "", new ArrayList<>());
@@ -61,14 +63,18 @@ public class LtpaTokenFilter extends OncePerRequestFilter {
 		return null;
 	}
 
-	private boolean validateLtpaToken(String ltpaToken) {
+	private boolean validateLtpaToken(HttpServletRequest request) {
 		// Implement the LTPA token validation logic here
 		// This might involve using WebSphere APIs or custom logic to validate the token
-		if (ltpaToken != null) {
-			return true; // Replace with actual validation logic
-		}
+		if (request != null) {
 
+			Principal principal = request.getUserPrincipal();
+			if (principal != null) {
+				System.out.println("User id is " + principal.getName());
+				return true;
+				
+			}
+		}
 		return false;
 	}
-
 }
