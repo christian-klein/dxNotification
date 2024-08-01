@@ -1,4 +1,4 @@
-package com.hcl.dxUserProfile.security;
+package com.hcl.dxnotification.security;
 
 import java.io.IOException;
 import java.util.ArrayList;
