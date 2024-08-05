@@ -1,6 +1,7 @@
 package com.hcl.dxnotification.controller;
 
 
+import com.hcl.dxnotification.errorhandling.ResourceNotFoundException;
 import com.hcl.dxnotification.model.DxNotificationMessage;
 import com.hcl.dxnotification.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,15 @@ public class DxNotificationRestController {
         return new ResponseEntity<>(savedNotification, HttpStatus.CREATED);
     }
     @DeleteMapping("/{notificationId}")
-    public void deleteNotification(@PathVariable Long notificationId) {
+    public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {
     	notificationService.deleteNotification(notificationId);
+    	return ResponseEntity.noContent().build();
+    }
+    
+    
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        // Customize the error response as needed
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The notification with the provided Id is not found");
     }
 }
