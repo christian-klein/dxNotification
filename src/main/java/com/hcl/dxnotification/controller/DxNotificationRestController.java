@@ -37,7 +37,7 @@ public class DxNotificationRestController {
     
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        // Customize the error response as needed
+        
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("The notification with the provided Id is not found");
     }
 }

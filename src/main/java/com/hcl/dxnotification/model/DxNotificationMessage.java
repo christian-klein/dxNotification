@@ -1,25 +1,13 @@
 package com.hcl.dxnotification.model;
 
-
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
-@Entity
 public class DxNotificationMessage {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    
     private Long notificationId;
-
     private String userId;
     private String title;
     private String message;
@@ -28,8 +16,8 @@ public class DxNotificationMessage {
     public DxNotificationMessage() {
     }
 
-    public DxNotificationMessage(String clientId, String title, String message, LocalDateTime expiryDate) {
-        this.userId = clientId;
+    public DxNotificationMessage(String userId, String title, String message, LocalDateTime expiryDate) {
+        this.userId = userId;
         this.title = title;
         this.message = message;
         this.expiryDate = expiryDate;
@@ -40,8 +28,8 @@ public class DxNotificationMessage {
     public Long getNotificationId() {
         return notificationId;
     }
+
     
-    @JsonIgnore
     public void setNotificationId(Long notificationId) {
         this.notificationId = notificationId;
     }
@@ -74,8 +62,8 @@ public class DxNotificationMessage {
         return expiryDate;
     }
 
-    public void setExpiryDate(LocalDateTime timestamp) {
-        this.expiryDate = timestamp;
+    public void setExpiryDate(LocalDateTime expiryDate) {
+        this.expiryDate = expiryDate;
     }
 
     @Override
