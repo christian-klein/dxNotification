@@ -12,15 +12,25 @@ public class DxNotificationMessage {
     private String title;
     private String message;
     private LocalDateTime expiryDate;
+    private String sourceAppId;
 
-    public DxNotificationMessage() {
+    public String getSourceAppId() {
+		return sourceAppId;
+	}
+
+	public void setSourceAppId(String sourceAppId) {
+		this.sourceAppId = sourceAppId;
+	}
+
+	public DxNotificationMessage() {
     }
 
-    public DxNotificationMessage(String userId, String title, String message, LocalDateTime expiryDate) {
+    public DxNotificationMessage(String userId, String title, String message, LocalDateTime expiryDate, String sourceAppId) {
         this.userId = userId;
         this.title = title;
         this.message = message;
         this.expiryDate = expiryDate;
+        this.sourceAppId = sourceAppId;
     }
 
     // Getters and Setters
@@ -73,7 +83,8 @@ public class DxNotificationMessage {
                 ", userId='" + userId + '\'' +
                 ", title='" + title + '\'' +
                 ", message='" + message + '\'' +
-                ", expiryDate=" + expiryDate +
+                ", expiryDate=" + expiryDate + '\''+
+                ", sourceAppId=" + sourceAppId + 
                 '}';
     }
 }

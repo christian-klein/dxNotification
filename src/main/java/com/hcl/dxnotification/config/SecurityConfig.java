@@ -21,7 +21,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .and()
             .csrf().disable(); // Disable CSRF protection
         //use LTPA token filter to process inbound security based on ltpa token
-        http.addFilterBefore(new LtpaTokenFilter(), BasicAuthenticationFilter.class);
+        //http.addFilterBefore(new LtpaTokenFilter(), BasicAuthenticationFilter.class);
     }
 }
  

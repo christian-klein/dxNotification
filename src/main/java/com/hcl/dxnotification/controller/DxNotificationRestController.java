@@ -20,8 +20,13 @@ public class DxNotificationRestController {
     private NotificationService notificationService;
 
     @GetMapping("/user/{userId}")
-    public List<DxNotificationMessage> getNotificationsByUserId(@PathVariable String userId) {
-        return notificationService.getNotificationsByUserId(userId);
+    public List<DxNotificationMessage> getNotificationsByUserId(@PathVariable String userId,
+    		@RequestParam(name = "limit", required = false) Integer limit, 
+    		@RequestParam(name = "invalidateCache", required = false, defaultValue = "false") Boolean invalidateCache) {
+    	if (invalidateCache) {
+            notificationService.invalidateCache();
+        }
+        return notificationService.getNotificationsByUserId(userId, limit, invalidateCache);
     }
     @PostMapping("/add")
     public ResponseEntity<DxNotificationMessage> addNotification(@RequestBody DxNotificationMessage notification) {

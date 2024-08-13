@@ -3,6 +3,11 @@ package com.hcl.dxnotification.service;
 import com.hcl.dxnotification.errorhandling.ResourceNotFoundException;
 import com.hcl.dxnotification.model.DxNotificationMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -23,35 +28,57 @@ public class NotificationService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
+    private CacheManager cacheManager;
+    @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    private static final String INSERT_NOTIFICATION_SQL = "INSERT INTO notifications (user_id, title, message, expiry_date) VALUES (:userId, :title, :message, :expiryDate)";
+    private static final String INSERT_NOTIFICATION_SQL = "INSERT INTO notifications (user_id, title, message, expiry_date, source_app_id) VALUES (:userId, :title, :message, :expiryDate, :sourceAppId)";
     private static final String DELETE_NOTIFICATION_SQL = "DELETE FROM notifications WHERE notification_id = ?";
     private static final String SELECT_BY_USER_ID_SQL = "SELECT * FROM notifications WHERE user_id = ? AND expiry_date > ?";
     private static final String COUNT_BY_NOTIFICATION_ID = "SELECT COUNT(*) FROM notifications WHERE notification_id = ?";
    
-
-    @Transactional(readOnly = true)
-    public List<DxNotificationMessage> getNotificationsByUserId(String userId) {
-        // Query for non-expired notifications by userId
-        return jdbcTemplate.query(
-                SELECT_BY_USER_ID_SQL,
-                new Object[]{userId, LocalDateTime.now()},
-                new DxNotificationMessageRowMapper()
-        );
+    @SuppressWarnings("deprecation")
+	@Transactional(readOnly = true)
+    @Cacheable(value = "notifications", key = "#userId.concat('-').concat(#limit.toString())", condition = "#invalidateCache == false")
+    public List<DxNotificationMessage> getNotificationsByUserId(String userId, Integer limit, Boolean invalidateCache) {
+    	   if (invalidateCache != null && invalidateCache) {
+               invalidateCacheForUser(userId);
+           }
+        // Prepare the SQL query with an optional LIMIT clause
+        String sql = "SELECT * FROM notifications WHERE user_id = ? AND expiry_date > ? " +
+                     (limit != null && limit > 0 ? "LIMIT ?" : "");
+        
+        // Execute the query with the appropriate parameters
+        if (limit != null && limit > 0) {
+            return jdbcTemplate.query(
+                    sql,
+                    new Object[]{userId, LocalDateTime.now(), limit},
+                    new DxNotificationMessageRowMapper()
+            );
+        } else {
+            return jdbcTemplate.query(
+                    sql,
+                    new Object[]{userId, LocalDateTime.now()},
+                    new DxNotificationMessageRowMapper()
+            );
+        }
     }
 
+
     public DxNotificationMessage addNotification(DxNotificationMessage notification) {
-       
-        
+           
+
+        // Create parameters including the new sourceAppId
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("userId", notification.getUserId())
                 .addValue("title", notification.getTitle())
                 .addValue("message", notification.getMessage())
-                .addValue("expiryDate", notification.getExpiryDate());
+                .addValue("expiryDate", notification.getExpiryDate())
+                .addValue("sourceAppId", notification.getSourceAppId()); // Added new parameter
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
+        // Execute the insert statement
         namedParameterJdbcTemplate.update(INSERT_NOTIFICATION_SQL, params, keyHolder, new String[] { "notification_id" });
 
         Number key = keyHolder.getKey();
@@ -59,6 +86,7 @@ public class NotificationService {
 
         return notification;
     }
+
 
     @Transactional
     public void deleteNotification(Long id) {
@@ -83,6 +111,20 @@ public class NotificationService {
             notification.setMessage(rs.getString("message"));
             notification.setExpiryDate(rs.getObject("expiry_date", LocalDateTime.class));
             return notification;
+        }
+    }
+    
+    @CacheEvict(value = "notifications", allEntries = true)
+    public void invalidateCache() {
+        // Method to force cache invalidation
+    }
+    
+    private void invalidateCacheForUser(String userId) {
+        Cache cache = cacheManager.getCache("notifications");
+        if (cache instanceof CaffeineCache) {
+            CaffeineCache caffeineCache = (CaffeineCache) cache;
+            // Remove cache entries for the specific user
+            caffeineCache.getNativeCache().invalidateAll(); // or use a custom method to invalidate specific keys if needed
         }
     }
 }
