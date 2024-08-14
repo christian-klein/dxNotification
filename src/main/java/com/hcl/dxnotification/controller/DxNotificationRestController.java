@@ -35,6 +35,8 @@ public class DxNotificationRestController {
     }
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {
+    	
+    	//TODO: Do we need to ensure that the user can only delete his own notification?
     	notificationService.deleteNotification(notificationId);
     	return ResponseEntity.noContent().build();
     }

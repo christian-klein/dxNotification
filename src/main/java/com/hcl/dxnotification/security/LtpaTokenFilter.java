@@ -69,6 +69,8 @@ public class LtpaTokenFilter extends OncePerRequestFilter {
 		if (request != null) {
 
 			Principal principal = request.getUserPrincipal();
+			
+			
 			if (principal != null) {
 				System.out.println("User id is " + principal.getName());
 				return true;

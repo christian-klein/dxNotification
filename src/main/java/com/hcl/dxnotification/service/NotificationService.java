@@ -39,7 +39,11 @@ public class NotificationService {
    
     @SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
-    @Cacheable(value = "notifications", key = "#userId.concat('-').concat(#limit.toString())", condition = "#invalidateCache == false")
+    @Cacheable(
+    	    value = "notifications",
+    	    key = "#userId.concat('-').concat(#limit != null ? #limit.toString() : 'default')",
+    	    condition = "#invalidateCache == false"
+    	)
     public List<DxNotificationMessage> getNotificationsByUserId(String userId, Integer limit, Boolean invalidateCache) {
     	   if (invalidateCache != null && invalidateCache) {
                invalidateCacheForUser(userId);
@@ -90,6 +94,8 @@ public class NotificationService {
 
     @Transactional
     public void deleteNotification(Long id) {
+    	
+    	
     	 
          Integer count = jdbcTemplate.queryForObject(COUNT_BY_NOTIFICATION_ID, new Object[]{id}, Integer.class);
 
@@ -124,7 +130,8 @@ public class NotificationService {
         if (cache instanceof CaffeineCache) {
             CaffeineCache caffeineCache = (CaffeineCache) cache;
             // Remove cache entries for the specific user
-            caffeineCache.getNativeCache().invalidateAll(); // or use a custom method to invalidate specific keys if needed
+            //caffeineCache.getNativeCache().invalidateAll(); // or use a custom method to invalidate specific keys if needed
+            
         }
     }
 }
