@@ -51,11 +51,10 @@ public class LtpaTokenFilter extends OncePerRequestFilter {
 	}
 
 	private String getLtpaTokenFromCookies(Cookie[] cookies) {
-		System.out.println("Extracting LtpaToken2 cookie");
+
 		if (cookies != null) {
 			for (Cookie cookie : cookies) {
 				if ("LtpaToken2".equals(cookie.getName())) {
-					System.out.println("Getting a valid cookie, the value is " + cookie.getValue());
 					return cookie.getValue();
 				}
 			}
@@ -69,12 +68,10 @@ public class LtpaTokenFilter extends OncePerRequestFilter {
 		if (request != null) {
 
 			Principal principal = request.getUserPrincipal();
-			
-			
+
 			if (principal != null) {
-				System.out.println("User id is " + principal.getName());
 				return true;
-				
+
 			}
 		}
 		return false;

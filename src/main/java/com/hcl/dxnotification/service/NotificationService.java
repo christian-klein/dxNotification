@@ -19,8 +19,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
 
 @Service
 public class NotificationService {
@@ -36,38 +43,69 @@ public class NotificationService {
     private static final String DELETE_NOTIFICATION_SQL = "DELETE FROM notifications WHERE notification_id = ?";
     private static final String SELECT_BY_USER_ID_SQL = "SELECT * FROM notifications WHERE user_id = ? AND expiry_date > ?";
     private static final String COUNT_BY_NOTIFICATION_ID = "SELECT COUNT(*) FROM notifications WHERE notification_id = ?";
-   
+
+    
+    private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
+
+    
     @SuppressWarnings("deprecation")
-	@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     @Cacheable(
-    	    value = "notifications",
-    	    key = "#userId.concat('-').concat(#limit != null ? #limit.toString() : 'default')",
-    	    condition = "#invalidateCache == false"
-    	)
+            value = "notifications",
+            key = "#userId.concat('-').concat(#limit != null ? #limit.toString() : 'default')",
+            condition = "#invalidateCache == false"
+    )
     public List<DxNotificationMessage> getNotificationsByUserId(String userId, Integer limit, Boolean invalidateCache) {
-    	   if (invalidateCache != null && invalidateCache) {
-               invalidateCacheForUser(userId);
-           }
-        // Prepare the SQL query with an optional LIMIT clause
-        String sql = "SELECT * FROM notifications WHERE user_id = ? AND expiry_date > ? " +
-                     (limit != null && limit > 0 ? "LIMIT ?" : "");
         
-        // Execute the query with the appropriate parameters
-        if (limit != null && limit > 0) {
-            return jdbcTemplate.query(
-                    sql,
-                    new Object[]{userId, LocalDateTime.now(), limit},
-                    new DxNotificationMessageRowMapper()
-            );
-        } else {
-            return jdbcTemplate.query(
-                    sql,
-                    new Object[]{userId, LocalDateTime.now()},
-                    new DxNotificationMessageRowMapper()
-            );
+        // Set context information in MDC for structured logging
+    	   // Generate a new transactionId
+        String transactionId = UUID.randomUUID().toString();
+
+        // Set context information in MDC for structured logging
+        MDC.put("transactionId", transactionId);
+        MDC.put("userId", userId);
+        MDC.put("limit", limit != null ? limit.toString() : "none");
+        MDC.put("invalidateCache", invalidateCache != null ? invalidateCache.toString() : "false");
+
+        try {
+            logger.info("Fetching notifications for user");
+
+            if (invalidateCache != null && invalidateCache) {
+                logger.info("Invalidating cache for user");
+                invalidateCacheForUser(userId);
+            }
+
+            // Prepare the SQL query with an optional LIMIT clause
+            String sql = "SELECT * FROM notifications WHERE user_id = ? AND expiry_date > ? " +
+                         (limit != null && limit > 0 ? "LIMIT ?" : "");
+            
+            // Execute the query with the appropriate parameters
+            List<DxNotificationMessage> notifications;
+            if (limit != null && limit > 0) {
+                notifications = jdbcTemplate.query(
+                        sql,
+                        new Object[]{userId, LocalDateTime.now(), limit},
+                        new DxNotificationMessageRowMapper()
+                );
+            } else {
+                notifications = jdbcTemplate.query(
+                        sql,
+                        new Object[]{userId, LocalDateTime.now()},
+                        new DxNotificationMessageRowMapper()
+                );
+            }
+
+            logger.info("Successfully fetched {} notifications for user", notifications.size());
+            return notifications;
+
+        } catch (Exception e) {
+            logger.error("Error fetching notifications for user", e);
+            throw e;
+        } finally {
+            // Clear MDC after logging to avoid leaking information to other threads
+            MDC.clear();
         }
     }
-
 
     public DxNotificationMessage addNotification(DxNotificationMessage notification) {
            
