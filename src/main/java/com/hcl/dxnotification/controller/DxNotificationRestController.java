@@ -23,6 +23,7 @@ public class DxNotificationRestController {
     public List<DxNotificationMessage> getNotificationsByUserId(@PathVariable String userId,
     		@RequestParam(name = "limit", required = false) Integer limit, 
     		@RequestParam(name = "invalidateCache", required = false, defaultValue = "false") Boolean invalidateCache) {
+    	//TODO: Add more validation to the inputs and throw the right exceptions if invalid
     	if (invalidateCache) {
             notificationService.invalidateCache();
         }
@@ -30,6 +31,7 @@ public class DxNotificationRestController {
     }
     @PostMapping("/add")
     public ResponseEntity<DxNotificationMessage> addNotification(@RequestBody DxNotificationMessage notification) {
+    	//TODO: Add validation for the notification and throw the right exceptions in invalid
         DxNotificationMessage savedNotification = notificationService.addNotification(notification);
         return new ResponseEntity<>(savedNotification, HttpStatus.CREATED);
     }
